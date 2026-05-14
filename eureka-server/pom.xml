@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.stockpro</groupId>
+        <artifactId>stockpro-parent</artifactId>
+        <version>1.0.0</version>
+        <!-- Parent pom.xml is one directory above this module -->
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>eureka-server</artifactId>
+    <name>StockPro - Eureka Server</name>
+    <description>
+        Service Discovery Server for StockPro microservices.
+        All services (api-gateway, auth-service, admin-server) register here
+        so they can find each other by name instead of hardcoded URLs.
+    </description>
+    <properties>
+        <sonar.skip>true</sonar.skip>
+    </properties>
+
+    <dependencies>
+
+        <!-- Eureka Server - the service registry itself -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+        </dependency>
+
+        <!-- Actuator - exposes /actuator/health for Admin Server monitoring -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Security - protects the Eureka dashboard with basic auth -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

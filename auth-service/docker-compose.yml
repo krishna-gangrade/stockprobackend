@@ -1,0 +1,96 @@
+services:
+
+  # ── MySQL ────────────────────────────────────────────────────────────────────
+  auth-db:
+    image: mysql:8.0
+    container_name: stockpro-auth-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: stockpro_auth
+      MYSQL_USER: stockpro
+      MYSQL_PASSWORD: stockpro_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3307:3306"          # host:3307 to avoid collision with other services
+    volumes:
+      - auth_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "stockpro", "-pstockpro_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  auth-redis:
+    image: redis:7-alpine
+    container_name: stockpro-auth-redis
+    restart: unless-stopped
+    command: redis-server --requirepass redis_pass --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6380:6379"          # host:6380 to avoid collision
+    volumes:
+      - auth_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_pass", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── Auth Service ─────────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stockpro-auth-service
+    restart: unless-stopped
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      auth-redis:
+        condition: service_healthy
+    environment:
+      # Database
+      DB_HOST: auth-db
+      DB_PORT: 3306
+      DB_NAME: stockpro_auth
+      DB_USER: stockpro
+      DB_PASSWORD: stockpro_pass
+      # Redis
+      REDIS_HOST: auth-redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis_pass
+      # JWT — override in production with a real secret from a secrets manager
+      JWT_SECRET: "stockpro-secret-key-must-be-at-least-256-bits-long-for-hs256"
+      JWT_ACCESS_EXPIRY: 28800000
+      JWT_REFRESH_EXPIRY: 604800000
+      # Google OAuth2
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-your-google-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-your-google-client-secret}
+      # Mail
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASS: ${MAIL_PASS}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-true}
+      MAIL_DEV_LOG_OTP_ON_FAILURE: ${MAIL_DEV_LOG_OTP_ON_FAILURE:-false}
+      # Server
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/api/v1/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 45s
+      retries: 3
+
+volumes:
+  auth_db_data:
+  auth_redis_data:
+
+networks:
+  default:
+    name: stockpro-network
+    external: false

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Force IDE Refresh -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ── Parent: Spring Boot BOM ────────────────────────────────────────── -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.4</version>
+        <relativePath/>
+    </parent>
+
+    <!-- ── This artifact ──────────────────────────────────────────────────── -->
+    <groupId>com.stockpro</groupId>
+    <artifactId>stockpro-parent</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>StockPro - Parent POM</name>
+    <description>
+        Parent POM for all StockPro microservices.
+        Manages Spring Boot, Spring Cloud, and shared dependency versions.
+    </description>
+
+    <!-- ── Modules ────────────────────────────────────────────────────────── -->
+    <modules>
+        <module>eureka-server</module>
+        <module>admin-server</module>
+        <module>api-gateway</module>
+        <module>auth-service</module>
+        <module>product-service</module>
+        <module>purchase-service</module>
+        <module>payment-service</module>
+        <module>warehouse-service</module>
+        <module>alert-service</module>
+        <module>movement-service</module>
+        <module>report-service</module>
+        <module>supplier-service</module>
+    </modules>
+
+    <!-- ── Properties ────────────────────────────────────────────────────── -->
+    <properties>
+        <java.version>17</java.version>
+        <spring-cloud.version>2023.0.1</spring-cloud.version>
+        <jacoco.version>0.8.11</jacoco.version>
+        <sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.projectKey>stockpro-backend</sonar.projectKey>
+        <sonar.projectName>StockPro Backend</sonar.projectName>
+        <sonar.coverage.jacoco.xmlReportPaths>**/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.exclusions>**/*Application.java,**/config/**,**/dto/**,**/entity/**,**/response/**,**/exception/**,**/util/JwtUtil.java,admin-server/**,admin-server/src/main/java/**,api-gateway/**,api-gateway/src/main/java/**,eureka-server/**,eureka-server/src/main/java/**,product-service/**,product-service/src/main/java/**,purchase-service/**,purchase-service/src/main/java/**,payment-service/**,payment-service/src/main/java/**,warehouse-service/**,warehouse-service/src/main/java/**,alert-service/**,alert-service/src/main/java/**,movement-service/**,movement-service/src/main/java/**,report-service/**,report-service/src/main/java/**,supplier-service/**,supplier-service/src/main/java/**</sonar.coverage.exclusions>
+        <sonar.exclusions>**/target/**,**/node_modules/**,**/.angular/**</sonar.exclusions>
+    </properties>
+
+    <!-- ── Dependency Management ─────────────────────────────────────────── -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Cloud BOM – manages all spring-cloud-* versions -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+    </dependencies>
+
+    <!-- ── Build ─────────────────────────────────────────────────────────── -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>17</source>
+                        <target>17</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>${sonar.maven.plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>

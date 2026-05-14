@@ -1,0 +1,21 @@
+CREATE DATABASE IF NOT EXISTS stockpro_auth;
+CREATE DATABASE IF NOT EXISTS stockpro_product;
+CREATE DATABASE IF NOT EXISTS stockpro_warehouse;
+CREATE DATABASE IF NOT EXISTS stockpro_purchase;
+CREATE DATABASE IF NOT EXISTS stockpro_payment;
+CREATE DATABASE IF NOT EXISTS stockpro_alert;
+CREATE DATABASE IF NOT EXISTS stockpro_movement;
+CREATE DATABASE IF NOT EXISTS stockpro_report;
+CREATE DATABASE IF NOT EXISTS stockpro_supplier;
+
+CREATE USER IF NOT EXISTS 'stockpro'@'%' IDENTIFIED BY 'stockpro_pass';
+GRANT ALL PRIVILEGES ON stockpro_auth.* TO 'stockpro'@'%';
+GRANT ALL PRIVILEGES ON stockpro_product.* TO 'stockpro'@'%';
+GRANT ALL PRIVILEGES ON stockpro_warehouse.* TO 'stockpro'@'%';
+GRANT ALL PRIVILEGES ON stockpro_purchase.* TO 'stockpro'@'%';
+GRANT ALL PRIVILEGES ON stockpro_payment.* TO 'stockpro'@'%';
+GRANT ALL PRIVILEGES ON stockpro_alert.* TO 'stockpro'@'%';
+GRANT ALL PRIVILEGES ON stockpro_movement.* TO 'stockpro'@'%';
+GRANT ALL PRIVILEGES ON stockpro_report.* TO 'stockpro'@'%';
+GRANT ALL PRIVILEGES ON stockpro_supplier.* TO 'stockpro'@'%';
+FLUSH PRIVILEGES;

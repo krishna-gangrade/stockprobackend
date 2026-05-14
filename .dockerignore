@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+
+**/node_modules
+**/dist
+**/coverage
+**/.angular
+**/.scannerwork
+**/target
+
+.env
+docs/diagnostics
