@@ -1,0 +1,29 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Maven / Java build output
+target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Runtime and crash logs
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# OS / editor files
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+
