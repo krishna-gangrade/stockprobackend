@@ -1,0 +1,943 @@
+@startuml
+title StockPro - Full Project Architecture
+top to bottom direction
+
+actor User
+rectangle "Angular Frontend" as Frontend
+rectangle "API Gateway" as Gateway
+
+package "Core Platform" {
+  rectangle "Eureka Server" as Eureka
+  rectangle "Admin Server" as Admin
+}
+
+package "Business Microservices" {
+  rectangle "Auth Service" as Auth
+  rectangle "Product Service" as Product
+  rectangle "Warehouse Service" as Warehouse
+  rectangle "Purchase Service" as Purchase
+  rectangle "Payment Service" as Payment
+  rectangle "Supplier Service" as Supplier
+  rectangle "Movement Service" as Movement
+  rectangle "Alert Service" as Alert
+  rectangle "Report Service" as Report
+}
+
+package "Infrastructure" {
+  database "MySQL" as MySQL
+  database "Redis" as Redis
+  queue "Kafka" as Kafka
+  cloud "Mail Server" as Mail
+  cloud "Razorpay" as Razorpay
+}
+
+User --> Frontend
+Frontend --> Gateway
+Gateway --> Auth
+Gateway --> Product
+Gateway --> Warehouse
+Gateway --> Purchase
+Gateway --> Payment
+Gateway --> Supplier
+Gateway --> Movement
+Gateway --> Alert
+Gateway --> Report
+Gateway --> Admin
+
+Auth ..> Eureka : registers
+Product ..> Eureka : registers
+Warehouse ..> Eureka : registers
+Purchase ..> Eureka : registers
+Payment ..> Eureka : registers
+Supplier ..> Eureka : registers
+Movement ..> Eureka : registers
+Alert ..> Eureka : registers
+Report ..> Eureka : registers
+Gateway ..> Eureka : discovery
+Admin ..> Eureka : monitoring
+
+Auth --> MySQL
+Product --> MySQL
+Warehouse --> MySQL
+Purchase --> MySQL
+Payment --> MySQL
+Supplier --> MySQL
+Movement --> MySQL
+Alert --> MySQL
+Report --> MySQL
+
+Auth --> Redis
+Auth --> Mail
+Alert --> Mail
+Supplier --> Mail
+Purchase --> Kafka
+Movement --> Kafka
+Payment --> Kafka
+Payment --> Razorpay
+@enduml
+
+@startuml
+title StockPro - Inter-Service Communication
+left to right direction
+
+rectangle Purchase
+rectangle Product
+rectangle Warehouse
+rectangle Movement
+rectangle Alert
+rectangle Auth
+rectangle Report
+rectangle Payment
+queue Kafka
+
+Purchase --> Product
+Purchase --> Warehouse
+Warehouse --> Product
+Movement --> Product
+Movement --> Warehouse
+Alert --> Auth
+Report --> Product
+Report --> Warehouse
+Report --> Movement
+Report --> Purchase
+
+Purchase --> Kafka : PO created
+Kafka --> Payment
+Movement --> Kafka : stock events
+@enduml
+
+@startuml
+title Auth Service
+
+interface AuthService {
+  +register()
+  +login()
+  +loginWithGoogle()
+  +logout()
+  +refreshToken()
+  +validateToken()
+  +getUserById()
+  +updateProfile()
+  +changePassword()
+  +sendForgotPasswordOtp()
+  +resetPasswordWithOtp()
+  +adminUpdateUser()
+  +deactivateUser()
+}
+
+class AuthController {
+  +register()
+  +login()
+  +googleLogin()
+  +logout()
+  +refreshToken()
+  +getCurrentUser()
+}
+
+class AuthServiceImpl {
+  +register()
+  +login()
+  +loginWithGoogle()
+  +logout()
+  +refreshToken()
+  +validateToken()
+  +getUserById()
+  +updateProfile()
+  +changePassword()
+  +sendForgotPasswordOtp()
+  +resetPasswordWithOtp()
+  +adminUpdateUser()
+  +deactivateUser()
+}
+
+class UserRepository {
+  +findByEmail()
+  +existsByEmail()
+  +findAllByRole()
+  +existsByRole()
+}
+
+class AuditLogRepository {
+  +save()
+}
+
+class PasswordResetOtpRepository {
+  +findTopByEmailIgnoreCaseAndUsedFalseOrderByCreatedAtDesc()
+  +save()
+}
+
+class JwtUtil {
+  +generateAccessToken()
+  +generateRefreshToken()
+  +extractEmail()
+  +extractUserId()
+  +extractRole()
+  +isTokenValid()
+  +isRefreshToken()
+  +getAccessTokenExpiryMs()
+  +getRemainingValidity()
+}
+
+class RedisTokenStore {
+  +storeRefreshToken()
+  +getRefreshToken()
+  +deleteRefreshToken()
+  +isRefreshTokenValid()
+  +blacklistAccessToken()
+  +isBlacklisted()
+  +storeSession()
+  +deleteSession()
+}
+
+interface PasswordResetMailService {
+  +sendOtp()
+  +sendResetSuccess()
+}
+
+class User {
+  +onCreate()
+}
+
+class AuthAuditLog {
+  +builder()
+}
+
+class PasswordResetOtp {
+  +builder()
+}
+
+AuthController --> AuthService
+AuthService <|.. AuthServiceImpl
+AuthServiceImpl --> UserRepository
+AuthServiceImpl --> AuditLogRepository
+AuthServiceImpl --> PasswordResetOtpRepository
+AuthServiceImpl --> JwtUtil
+AuthServiceImpl --> RedisTokenStore
+AuthServiceImpl --> PasswordResetMailService
+UserRepository --> User
+AuditLogRepository --> AuthAuditLog
+PasswordResetOtpRepository --> PasswordResetOtp
+@enduml
+
+@startuml
+title Product Service
+
+interface ProductService {
+  +getById()
+  +getBySku()
+  +getAllProducts()
+  +getActiveProducts()
+  +getByCategory()
+  +search()
+  +create()
+  +update()
+  +deactivate()
+  +activate()
+  +delete()
+}
+
+class ProductController {
+  +getById()
+  +getBySku()
+  +getAllProducts()
+  +create()
+  +update()
+}
+
+class ProductServiceImpl {
+  +getById()
+  +getBySku()
+  +getAllProducts()
+  +getActiveProducts()
+  +getByCategory()
+  +search()
+  +create()
+  +update()
+  +deactivate()
+  +activate()
+  +delete()
+}
+
+class ProductRepository {
+  +findBySku()
+  +findByActiveTrue()
+  +findByCategoryIgnoreCase()
+  +searchProducts()
+}
+
+class Product {
+  +builder()
+}
+
+ProductController --> ProductService
+ProductService <|.. ProductServiceImpl
+ProductServiceImpl --> ProductRepository
+ProductRepository --> Product
+@enduml
+
+@startuml
+title Warehouse Service
+
+interface WarehouseService {
+  +createWarehouse()
+  +getById()
+  +existsById()
+  +getAllWarehouses()
+  +getActiveWarehouses()
+  +updateWarehouse()
+  +deactivateWarehouse()
+  +assignManager()
+  +getStockLevel()
+  +getStockByWarehouse()
+  +getStockByProduct()
+  +updateStock()
+  +reserveStock()
+  +releaseReservation()
+  +transferStock()
+  +getLowStockItems()
+  +getOverstockItems()
+}
+
+class WarehouseController {
+  +createWarehouse()
+  +getById()
+  +getAllWarehouses()
+  +updateWarehouse()
+  +updateStock()
+  +transferStock()
+  +getLowStockItems()
+}
+
+class WarehouseServiceImpl {
+  +createWarehouse()
+  +getById()
+  +existsById()
+  +getAllWarehouses()
+  +getActiveWarehouses()
+  +updateWarehouse()
+  +deactivateWarehouse()
+  +assignManager()
+  +getStockLevel()
+  +getStockByWarehouse()
+  +getStockByProduct()
+  +updateStock()
+  +reserveStock()
+  +releaseReservation()
+  +transferStock()
+  +getLowStockItems()
+  +getOverstockItems()
+}
+
+class WarehouseRepository {
+  +existsByName()
+  +findByIsActive()
+}
+
+class StockLevelRepository {
+  +findByWarehouseIdAndProductId()
+  +findByWarehouseId()
+  +findByProductId()
+}
+
+class ProductClient {
+  +getById()
+  +getAllProducts()
+}
+
+class Warehouse {
+  +builder()
+}
+
+class StockLevel {
+  +getAvailableQuantity()
+}
+
+WarehouseController --> WarehouseService
+WarehouseService <|.. WarehouseServiceImpl
+WarehouseServiceImpl --> WarehouseRepository
+WarehouseServiceImpl --> StockLevelRepository
+WarehouseServiceImpl --> ProductClient
+WarehouseRepository --> Warehouse
+StockLevelRepository --> StockLevel
+Warehouse "1" --> "*" StockLevel
+@enduml
+
+@startuml
+title Purchase Service
+
+interface PurchaseService {
+  +createPO()
+  +getById()
+  +getAllPOs()
+  +getBySupplier()
+  +getByWarehouse()
+  +getByStatus()
+  +getByDateRange()
+  +getOverduePOs()
+  +updatePO()
+  +submitForApproval()
+  +approvePO()
+  +rejectPO()
+  +cancelPO()
+  +receiveGoods()
+}
+
+class PurchaseController {
+  +createPO()
+  +getById()
+  +getAllPOs()
+  +updatePO()
+  +approvePO()
+  +receiveGoods()
+}
+
+class PurchaseServiceImpl {
+  +createPO()
+  +getById()
+  +getAllPOs()
+  +getBySupplier()
+  +getByWarehouse()
+  +getByStatus()
+  +getByDateRange()
+  +getOverduePOs()
+  +updatePO()
+  +submitForApproval()
+  +approvePO()
+  +rejectPO()
+  +cancelPO()
+  +receiveGoods()
+}
+
+class PurchaseRepository {
+  +existsByReferenceNumber()
+  +findBySupplierId()
+  +findByWarehouseId()
+  +findByStatus()
+  +findByOrderDateBetween()
+  +findByStatusAndExpectedDateBefore()
+}
+
+class ProductClient {
+  +getById()
+}
+
+class WarehouseClient {
+  +existsById()
+  +getStockLevel()
+  +updateStock()
+}
+
+class POApprovalProducer {
+  +publishApprovalEvent()
+  +publishCreatedEvent()
+}
+
+class PurchaseOrder {
+  +onUpdate()
+}
+
+class POLineItem {
+  +getPendingQty()
+  +isFullyReceived()
+}
+
+PurchaseController --> PurchaseService
+PurchaseService <|.. PurchaseServiceImpl
+PurchaseServiceImpl --> PurchaseRepository
+PurchaseServiceImpl --> ProductClient
+PurchaseServiceImpl --> WarehouseClient
+PurchaseServiceImpl --> POApprovalProducer
+PurchaseRepository --> PurchaseOrder
+PurchaseOrder "1" *-- "*" POLineItem
+@enduml
+
+@startuml
+title Payment Service
+
+interface PaymentService {
+  +createPayment()
+  +createRazorpayOrder()
+  +verifyRazorpayPayment()
+  +getById()
+  +getAll()
+  +getByPurchaseOrder()
+  +getBySupplier()
+  +getByStatus()
+  +getOverduePayments()
+  +getByDateRange()
+  +markFailed()
+  +cancelPayment()
+}
+
+class PaymentController {
+  +createPayment()
+  +getById()
+  +getAll()
+  +markFailed()
+  +cancelPayment()
+  +createRazorpayOrder()
+  +verifyRazorpayPayment()
+}
+
+class PaymentServiceImpl {
+  +createPayment()
+  +createRazorpayOrder()
+  +verifyRazorpayPayment()
+  +getById()
+  +getAll()
+  +getByPurchaseOrder()
+  +getBySupplier()
+  +getByStatus()
+  +getOverduePayments()
+  +getByDateRange()
+  +markFailed()
+  +cancelPayment()
+}
+
+class PaymentRepository {
+  +findByPurchaseOrderId()
+  +findBySupplierId()
+  +findByStatus()
+  +findOverduePayments()
+  +findByPaymentDateBetween()
+}
+
+class POCreatedListener {
+  +handlePOCreated()
+}
+
+class Payment {
+  +onUpdate()
+}
+
+PaymentController --> PaymentService
+PaymentService <|.. PaymentServiceImpl
+PaymentServiceImpl --> PaymentRepository
+POCreatedListener --> PaymentRepository
+PaymentRepository --> Payment
+@enduml
+
+@startuml
+title Supplier Service
+
+interface SupplierService {
+  +createSupplier()
+  +getById()
+  +getAllSuppliers()
+  +getActiveSuppliers()
+  +searchSuppliers()
+  +getByCity()
+  +getByCountry()
+  +getTopRatedSuppliers()
+  +updateSupplier()
+  +updateRating()
+  +deactivateSupplier()
+  +deleteSupplier()
+}
+
+interface SupplierNotificationService {
+  +sendSuspensionNotice()
+}
+
+class SupplierController {
+  +createSupplier()
+  +getById()
+  +getAllSuppliers()
+  +search()
+  +updateSupplier()
+  +updateRating()
+}
+
+class SupplierServiceImpl {
+  +createSupplier()
+  +getById()
+  +getAllSuppliers()
+  +getActiveSuppliers()
+  +searchSuppliers()
+  +getByCity()
+  +getByCountry()
+  +getTopRatedSuppliers()
+  +updateSupplier()
+  +updateRating()
+  +deactivateSupplier()
+  +deleteSupplier()
+}
+
+class SupplierNotificationServiceImpl {
+  +sendSuspensionNotice()
+}
+
+class SupplierRepository {
+  +findByIsActiveTrue()
+  +searchSuppliers()
+  +findByCityIgnoreCase()
+  +findByCountryIgnoreCase()
+  +findByIsActiveTrueOrderByRatingDesc()
+}
+
+class Supplier {
+  +builder()
+}
+
+SupplierController --> SupplierService
+SupplierService <|.. SupplierServiceImpl
+SupplierServiceImpl --> SupplierRepository
+SupplierNotificationService <|.. SupplierNotificationServiceImpl
+SupplierRepository --> Supplier
+@enduml
+
+@startuml
+title Movement Service
+
+interface MovementService {
+  +recordMovement()
+  +getById()
+  +getAllMovements()
+  +getByProduct()
+  +getByWarehouse()
+  +getByType()
+  +getByDateRange()
+  +getByReference()
+  +getMovementHistory()
+  +getTotalStockIn()
+  +getTotalStockOut()
+}
+
+class MovementController {
+  +recordMovement()
+  +getById()
+  +getAllMovements()
+  +getByProduct()
+  +getByWarehouse()
+  +getMovementHistory()
+}
+
+class MovementServiceImpl {
+  +recordMovement()
+  +getById()
+  +getAllMovements()
+  +getByProduct()
+  +getByWarehouse()
+  +getByType()
+  +getByDateRange()
+  +getByReference()
+  +getMovementHistory()
+  +getTotalStockIn()
+  +getTotalStockOut()
+}
+
+class MovementRepository {
+  +findByProductIdOrderByMovementDateDesc()
+  +findByWarehouseId()
+  +findByMovementType()
+  +findByMovementDateBetween()
+  +findByReferenceId()
+  +findByProductIdAndWarehouseIdOrderByMovementDateAsc()
+  +sumStockIn()
+  +sumStockOut()
+}
+
+class ProductClient {
+  +getById()
+}
+
+class WarehouseClient {
+  +getById()
+  +getStockLevel()
+  +updateStock()
+  +transferStock()
+}
+
+class MovementProducer {
+  +sendStockUpdate()
+}
+
+class LowStockEventConsumer {
+  +consumeLowStockEvent()
+}
+
+class StockMovement {
+  +builder()
+}
+
+MovementController --> MovementService
+MovementService <|.. MovementServiceImpl
+MovementServiceImpl --> MovementRepository
+MovementServiceImpl --> ProductClient
+MovementServiceImpl --> WarehouseClient
+MovementServiceImpl --> MovementProducer
+MovementRepository --> StockMovement
+LowStockEventConsumer --> MovementServiceImpl
+@enduml
+
+@startuml
+title Alert Service
+
+interface AlertService {
+  +sendAlert()
+  +sendBulkAlert()
+  +getById()
+  +getAllAlerts()
+  +getByRecipient()
+  +getUnreadByRecipient()
+  +getUnacknowledgedByRecipient()
+  +getByType()
+  +getBySeverity()
+  +getUnreadCount()
+  +markAsRead()
+  +markAllReadForRecipient()
+  +acknowledge()
+  +deleteAlert()
+}
+
+class AlertController {
+  +sendAlert()
+  +sendBulkAlert()
+  +getMyAlerts()
+  +getUnreadCount()
+  +markAsRead()
+  +acknowledge()
+}
+
+class AlertServiceImpl {
+  +sendAlert()
+  +sendBulkAlert()
+  +getById()
+  +getAllAlerts()
+  +getByRecipient()
+  +getUnreadByRecipient()
+  +getUnacknowledgedByRecipient()
+  +getByType()
+  +getBySeverity()
+  +getUnreadCount()
+  +markAsRead()
+  +markAllReadForRecipient()
+  +acknowledge()
+  +deleteAlert()
+}
+
+class AlertRepository {
+  +findByRecipientId()
+  +findByRecipientIdAndIsRead()
+  +findByRecipientIdAndIsAcknowledged()
+  +findByType()
+  +findBySeverity()
+  +countByRecipientIdAndIsRead()
+}
+
+class AuthClient {
+  +getUserById()
+}
+
+class Alert {
+  +builder()
+}
+
+AlertController --> AlertService
+AlertService <|.. AlertServiceImpl
+AlertServiceImpl --> AlertRepository
+AlertServiceImpl --> AuthClient
+AlertRepository --> Alert
+@enduml
+
+@startuml
+title Report Service
+
+interface ReportService {
+  +takeSnapshot()
+  +getSnapshotByDate()
+  +getSnapshotByWarehouse()
+  +getTotalStockValue()
+  +getStockValueByWarehouse()
+  +getInventoryTurnover()
+  +getInventoryTurnoverByWarehouse()
+  +getTopMovingProducts()
+  +getSlowMovingProducts()
+  +getDeadStock()
+  +getPOSummary()
+  +getPOSummaryBySupplier()
+}
+
+class ReportController {
+  +takeSnapshot()
+  +getSnapshotByDate()
+  +getStockValueByWarehouse()
+  +getTopMovingProducts()
+  +getDeadStock()
+  +getPOSummary()
+}
+
+class ReportServiceImpl {
+  +takeSnapshot()
+  +getSnapshotByDate()
+  +getSnapshotByWarehouse()
+  +getTotalStockValue()
+  +getStockValueByWarehouse()
+  +getInventoryTurnover()
+  +getInventoryTurnoverByWarehouse()
+  +getTopMovingProducts()
+  +getSlowMovingProducts()
+  +getDeadStock()
+  +getPOSummary()
+  +getPOSummaryBySupplier()
+}
+
+class ReportRepository {
+  +findBySnapshotDate()
+  +findByWarehouseId()
+  +findByProductId()
+  +findBySnapshotDateBetween()
+  +findByWarehouseIdAndProductIdAndSnapshotDate()
+}
+
+class ProductClient {
+  +getById()
+  +getAllProducts()
+}
+
+class WarehouseClient {
+  +getAllWarehouses()
+  +getStockByWarehouse()
+}
+
+class MovementClient {
+  +getAllMovements()
+}
+
+class PurchaseClient {
+  +getByDateRange()
+}
+
+class SnapshotScheduler {
+  +runDailySnapshot()
+}
+
+class InventorySnapshot {
+  +builder()
+}
+
+ReportController --> ReportService
+ReportService <|.. ReportServiceImpl
+ReportServiceImpl --> ReportRepository
+ReportServiceImpl --> ProductClient
+ReportServiceImpl --> WarehouseClient
+ReportServiceImpl --> MovementClient
+ReportServiceImpl --> PurchaseClient
+SnapshotScheduler --> ReportServiceImpl
+ReportRepository --> InventorySnapshot
+@enduml
+
+@startuml
+title API Gateway
+left to right direction
+
+actor Client
+rectangle JwtFilter
+rectangle Routes
+rectangle Auth
+rectangle Product
+rectangle Warehouse
+rectangle Purchase
+rectangle Payment
+rectangle Supplier
+rectangle Movement
+rectangle Alert
+rectangle Report
+rectangle "Admin Server" as AdminGateway
+
+Client --> JwtFilter
+JwtFilter --> Routes
+Routes --> Auth
+Routes --> Product
+Routes --> Warehouse
+Routes --> Purchase
+Routes --> Payment
+Routes --> Supplier
+Routes --> Movement
+Routes --> Alert
+Routes --> Report
+Routes --> AdminGateway
+@enduml
+
+@startuml
+title Frontend
+top to bottom direction
+
+rectangle "App Routes" as App
+rectangle "Login / Register / Forgot Password" as AuthPages
+rectangle "Admin / Manager / Officer / Staff Dashboards" as Dashboards
+rectangle Products
+rectangle Warehouses
+rectangle "Purchase Orders" as PurchasePage
+rectangle Payments
+rectangle Suppliers
+rectangle Movements
+rectangle Alerts
+rectangle Reports
+rectangle "API Docs" as Docs
+rectangle "Auth Guard / Role Guard" as Guards
+rectangle "AuthService / ApiServices / JWT Interceptor" as FrontServices
+
+App --> AuthPages
+App --> Dashboards
+App --> Products
+App --> Warehouses
+App --> PurchasePage
+App --> Payments
+App --> Suppliers
+App --> Movements
+App --> Alerts
+App --> Reports
+App --> Docs
+App --> Guards
+Guards --> FrontServices
+@enduml
+
+@startuml
+title Core Domain Overview
+
+class User {
+  +onCreate()
+}
+class Product {
+  +builder()
+}
+class Warehouse {
+  +builder()
+}
+class StockLevel {
+  +getAvailableQuantity()
+}
+class PurchaseOrder {
+  +onUpdate()
+}
+class POLineItem {
+  +getPendingQty()
+  +isFullyReceived()
+}
+class Payment {
+  +onUpdate()
+}
+class Supplier {
+  +builder()
+}
+class StockMovement {
+  +builder()
+}
+class Alert {
+  +builder()
+}
+class InventorySnapshot {
+  +builder()
+}
+
+Warehouse "1" --> "*" StockLevel
+Product "1" --> "*" StockLevel
+Supplier "1" --> "*" PurchaseOrder
+PurchaseOrder "1" *-- "*" POLineItem
+PurchaseOrder "1" --> "0..1" Payment
+Product "1" --> "*" StockMovement
+User "1" --> "*" Alert
+Product "1" --> "*" InventorySnapshot
+Warehouse "1" --> "*" InventorySnapshot
+@enduml

@@ -1,0 +1,83 @@
+@startuml
+title Movement Service
+
+interface MovementService {
+  +recordMovement()
+  +getById()
+  +getAllMovements()
+  +getByProduct()
+  +getByWarehouse()
+  +getByType()
+  +getByDateRange()
+  +getByReference()
+  +getMovementHistory()
+  +getTotalStockIn()
+  +getTotalStockOut()
+}
+
+class MovementController {
+  +recordMovement()
+  +getById()
+  +getAllMovements()
+  +getByProduct()
+  +getByWarehouse()
+  +getMovementHistory()
+}
+
+class MovementServiceImpl {
+  +recordMovement()
+  +getById()
+  +getAllMovements()
+  +getByProduct()
+  +getByWarehouse()
+  +getByType()
+  +getByDateRange()
+  +getByReference()
+  +getMovementHistory()
+  +getTotalStockIn()
+  +getTotalStockOut()
+}
+
+class MovementRepository {
+  +findByProductIdOrderByMovementDateDesc()
+  +findByWarehouseId()
+  +findByMovementType()
+  +findByMovementDateBetween()
+  +findByReferenceId()
+  +findByProductIdAndWarehouseIdOrderByMovementDateAsc()
+  +sumStockIn()
+  +sumStockOut()
+}
+
+class ProductClient {
+  +getById()
+}
+
+class WarehouseClient {
+  +getById()
+  +getStockLevel()
+  +updateStock()
+  +transferStock()
+}
+
+class MovementProducer {
+  +sendStockUpdate()
+}
+
+class LowStockEventConsumer {
+  +consumeLowStockEvent()
+}
+
+class StockMovement {
+  +builder()
+}
+
+MovementController --> MovementService
+MovementService <|.. MovementServiceImpl
+MovementServiceImpl --> MovementRepository
+MovementServiceImpl --> ProductClient
+MovementServiceImpl --> WarehouseClient
+MovementServiceImpl --> MovementProducer
+MovementRepository --> StockMovement
+LowStockEventConsumer --> MovementServiceImpl
+@enduml

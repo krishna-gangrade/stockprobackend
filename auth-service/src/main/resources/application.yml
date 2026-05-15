@@ -1,6 +1,6 @@
 spring:
   config:
-    import: "optional:file:.env[.properties],optional:file:../.env[.properties],optional:file:../../.env[.properties]"
+    import: "optional:file:.env[.properties],optional:file:../.env[.properties]"
   application:
     name: auth-service
 
@@ -77,7 +77,7 @@ springdoc:
     enabled: true
   swagger-ui:
     path: /swagger-ui.html
-    enabled: true 
+    enabled: true
     try-it-out-enabled: true
     operations-sorter: alpha
     tags-sorter: alpha

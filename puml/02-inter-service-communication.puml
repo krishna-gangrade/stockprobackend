@@ -1,0 +1,29 @@
+@startuml
+title StockPro - Inter-Service Communication
+left to right direction
+
+rectangle Purchase
+rectangle Product
+rectangle Warehouse
+rectangle Movement
+rectangle Alert
+rectangle Auth
+rectangle Report
+rectangle Payment
+queue Kafka
+
+Purchase --> Product
+Purchase --> Warehouse
+Warehouse --> Product
+Movement --> Product
+Movement --> Warehouse
+Alert --> Auth
+Report --> Product
+Report --> Warehouse
+Report --> Movement
+Report --> Purchase
+
+Purchase --> Kafka : PO created
+Kafka --> Payment
+Movement --> Kafka : stock events
+@enduml

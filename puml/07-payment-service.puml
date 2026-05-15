@@ -1,0 +1,65 @@
+@startuml
+title Payment Service
+
+interface PaymentService {
+  +createPayment()
+  +createRazorpayOrder()
+  +verifyRazorpayPayment()
+  +getById()
+  +getAll()
+  +getByPurchaseOrder()
+  +getBySupplier()
+  +getByStatus()
+  +getOverduePayments()
+  +getByDateRange()
+  +markFailed()
+  +cancelPayment()
+}
+
+class PaymentController {
+  +createPayment()
+  +getById()
+  +getAll()
+  +markFailed()
+  +cancelPayment()
+  +createRazorpayOrder()
+  +verifyRazorpayPayment()
+}
+
+class PaymentServiceImpl {
+  +createPayment()
+  +createRazorpayOrder()
+  +verifyRazorpayPayment()
+  +getById()
+  +getAll()
+  +getByPurchaseOrder()
+  +getBySupplier()
+  +getByStatus()
+  +getOverduePayments()
+  +getByDateRange()
+  +markFailed()
+  +cancelPayment()
+}
+
+class PaymentRepository {
+  +findByPurchaseOrderId()
+  +findBySupplierId()
+  +findByStatus()
+  +findOverduePayments()
+  +findByPaymentDateBetween()
+}
+
+class POCreatedListener {
+  +handlePOCreated()
+}
+
+class Payment {
+  +onUpdate()
+}
+
+PaymentController --> PaymentService
+PaymentService <|.. PaymentServiceImpl
+PaymentServiceImpl --> PaymentRepository
+POCreatedListener --> PaymentRepository
+PaymentRepository --> Payment
+@enduml

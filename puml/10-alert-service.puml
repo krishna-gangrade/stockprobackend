@@ -1,0 +1,69 @@
+@startuml
+title Alert Service
+
+interface AlertService {
+  +sendAlert()
+  +sendBulkAlert()
+  +getById()
+  +getAllAlerts()
+  +getByRecipient()
+  +getUnreadByRecipient()
+  +getUnacknowledgedByRecipient()
+  +getByType()
+  +getBySeverity()
+  +getUnreadCount()
+  +markAsRead()
+  +markAllReadForRecipient()
+  +acknowledge()
+  +deleteAlert()
+}
+
+class AlertController {
+  +sendAlert()
+  +sendBulkAlert()
+  +getMyAlerts()
+  +getUnreadCount()
+  +markAsRead()
+  +acknowledge()
+}
+
+class AlertServiceImpl {
+  +sendAlert()
+  +sendBulkAlert()
+  +getById()
+  +getAllAlerts()
+  +getByRecipient()
+  +getUnreadByRecipient()
+  +getUnacknowledgedByRecipient()
+  +getByType()
+  +getBySeverity()
+  +getUnreadCount()
+  +markAsRead()
+  +markAllReadForRecipient()
+  +acknowledge()
+  +deleteAlert()
+}
+
+class AlertRepository {
+  +findByRecipientId()
+  +findByRecipientIdAndIsRead()
+  +findByRecipientIdAndIsAcknowledged()
+  +findByType()
+  +findBySeverity()
+  +countByRecipientIdAndIsRead()
+}
+
+class AuthClient {
+  +getUserById()
+}
+
+class Alert {
+  +builder()
+}
+
+AlertController --> AlertService
+AlertService <|.. AlertServiceImpl
+AlertServiceImpl --> AlertRepository
+AlertServiceImpl --> AuthClient
+AlertRepository --> Alert
+@enduml

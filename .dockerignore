@@ -2,13 +2,11 @@
 .github
 .idea
 .vscode
-
-**/node_modules
-**/dist
-**/coverage
-**/.angular
-**/.scannerwork
 **/target
+**/node_modules
+**/.angular
+**/coverage
+**/*.log
+hs_err_pid*.log
+replay_pid*.log
 
-.env
-docs/diagnostics

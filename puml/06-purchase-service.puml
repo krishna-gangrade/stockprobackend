@@ -1,0 +1,88 @@
+@startuml
+title Purchase Service
+
+interface PurchaseService {
+  +createPO()
+  +getById()
+  +getAllPOs()
+  +getBySupplier()
+  +getByWarehouse()
+  +getByStatus()
+  +getByDateRange()
+  +getOverduePOs()
+  +updatePO()
+  +submitForApproval()
+  +approvePO()
+  +rejectPO()
+  +cancelPO()
+  +receiveGoods()
+}
+
+class PurchaseController {
+  +createPO()
+  +getById()
+  +getAllPOs()
+  +updatePO()
+  +approvePO()
+  +receiveGoods()
+}
+
+class PurchaseServiceImpl {
+  +createPO()
+  +getById()
+  +getAllPOs()
+  +getBySupplier()
+  +getByWarehouse()
+  +getByStatus()
+  +getByDateRange()
+  +getOverduePOs()
+  +updatePO()
+  +submitForApproval()
+  +approvePO()
+  +rejectPO()
+  +cancelPO()
+  +receiveGoods()
+}
+
+class PurchaseRepository {
+  +existsByReferenceNumber()
+  +findBySupplierId()
+  +findByWarehouseId()
+  +findByStatus()
+  +findByOrderDateBetween()
+  +findByStatusAndExpectedDateBefore()
+}
+
+class ProductClient {
+  +getById()
+}
+
+class WarehouseClient {
+  +existsById()
+  +getStockLevel()
+  +updateStock()
+}
+
+class POApprovalProducer {
+  +publishApprovalEvent()
+  +publishCreatedEvent()
+}
+
+class PurchaseOrder {
+  +onUpdate()
+}
+
+class POLineItem {
+  +getPendingQty()
+  +isFullyReceived()
+}
+
+PurchaseController --> PurchaseService
+PurchaseService <|.. PurchaseServiceImpl
+PurchaseServiceImpl --> PurchaseRepository
+PurchaseServiceImpl --> ProductClient
+PurchaseServiceImpl --> WarehouseClient
+PurchaseServiceImpl --> POApprovalProducer
+PurchaseRepository --> PurchaseOrder
+PurchaseOrder "1" *-- "*" POLineItem
+@enduml

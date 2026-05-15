@@ -14,6 +14,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$ComposeFile = "docker-compose.all.yml"
 
 function Write-Header {
     param([string]$Message)
@@ -53,14 +54,14 @@ try {
 # ── Status mode ───────────────────────────────────────────────────────────────
 if ($Status) {
     Write-Step "Container Status:"
-    docker compose ps
+    docker compose -f $ComposeFile ps
     exit 0
 }
 
 # ── Stop mode ─────────────────────────────────────────────────────────────────
 if ($Stop) {
     Write-Step "Stopping all StockPro containers..."
-    docker compose down --remove-orphans
+    docker compose -f $ComposeFile down --remove-orphans
     Write-Success "All containers stopped"
     exit 0
 }
@@ -68,7 +69,7 @@ if ($Stop) {
 # ── Clean mode ────────────────────────────────────────────────────────────────
 if ($Clean) {
     Write-Step "Cleaning up containers, images, volumes, and stale networks..."
-    docker compose down -v --rmi local --remove-orphans 2>$null
+    docker compose -f $ComposeFile down -v --rmi local --remove-orphans 2>$null
     docker network prune -f 2>$null | Out-Null
     Write-Success "Cleanup complete"
     $Build = $true
@@ -81,13 +82,13 @@ if ($Rebuild) {
         exit 1
     }
     Write-Step "Rebuilding $Service..."
-    docker compose build --no-cache $Service
+    docker compose -f $ComposeFile build --no-cache $Service
     if ($LASTEXITCODE -ne 0) {
         Write-Fail "Build failed for $Service"
         exit 1
     }
     Write-Step "Restarting $Service..."
-    docker compose up -d --no-deps $Service
+    docker compose -f $ComposeFile up -d --no-deps $Service
     Write-Success "$Service rebuilt and restarted"
     exit 0
 }
@@ -117,7 +118,7 @@ if ($Build) {
     $i = 1
     foreach ($svc in $services) {
         Write-Host "  [$i/$total] Building $svc..." -ForegroundColor Gray
-        docker compose build $svc
+        docker compose -f $ComposeFile build $svc
         if ($LASTEXITCODE -ne 0) {
             Write-Fail "Build failed on: $svc. Check the output above."
             Write-Host "  Tip: .\docker-start.ps1 -Rebuild -Service $svc  (retry just this service)" -ForegroundColor Yellow
@@ -150,10 +151,10 @@ Write-Host "                   Alert, Movement, Report, Supplier" -ForegroundCol
 Write-Host "  Frontend       : Angular 17 (Nginx)" -ForegroundColor Gray
 Write-Host "  Email          : External SMTP (configured via .env)" -ForegroundColor Gray
 
-docker compose up -d --remove-orphans
+docker compose -f $ComposeFile up -d --remove-orphans
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Fail "Failed to start containers. Run: docker compose logs"
+    Write-Fail "Failed to start containers. Run: docker compose -f $ComposeFile logs"
     exit 1
 }
 
@@ -162,7 +163,7 @@ Write-Step "Waiting 45s for all services to initialize..."
 Start-Sleep -Seconds 45
 
 Write-Step "Container Status:"
-docker compose ps
+docker compose -f $ComposeFile ps
 
 # ── Print all service URLs ─────────────────────────────────────────────────────
 Write-Header "Service URLs"
@@ -191,7 +192,7 @@ Write-Host ""
 
 if ($Logs) {
     Write-Step "Tailing logs (Ctrl+C to exit)..."
-    docker compose logs -f
+    docker compose -f $ComposeFile logs -f
 }
 
 Write-Host "Quick reference:" -ForegroundColor DarkGray

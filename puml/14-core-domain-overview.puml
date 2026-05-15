@@ -1,0 +1,48 @@
+@startuml
+title Core Domain Overview
+
+class User {
+  +onCreate()
+}
+class Product {
+  +builder()
+}
+class Warehouse {
+  +builder()
+}
+class StockLevel {
+  +getAvailableQuantity()
+}
+class PurchaseOrder {
+  +onUpdate()
+}
+class POLineItem {
+  +getPendingQty()
+  +isFullyReceived()
+}
+class Payment {
+  +onUpdate()
+}
+class Supplier {
+  +builder()
+}
+class StockMovement {
+  +builder()
+}
+class Alert {
+  +builder()
+}
+class InventorySnapshot {
+  +builder()
+}
+
+Warehouse "1" --> "*" StockLevel
+Product "1" --> "*" StockLevel
+Supplier "1" --> "*" PurchaseOrder
+PurchaseOrder "1" *-- "*" POLineItem
+PurchaseOrder "1" --> "0..1" Payment
+Product "1" --> "*" StockMovement
+User "1" --> "*" Alert
+Product "1" --> "*" InventorySnapshot
+Warehouse "1" --> "*" InventorySnapshot
+@enduml

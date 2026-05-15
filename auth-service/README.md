@@ -49,16 +49,16 @@ Handles all authentication, session management, and user administration for the 
 
 ### Start with Docker Compose
 ```bash
-cp .env.example .env       # set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
-docker compose up --build
+cd ../
+docker compose -f docker-compose.all.yml up --build auth-service
 ```
 
-Service will be available at `http://localhost:8081`  
+Service will be available at `http://localhost:8083`  
 Swagger UI: `http://localhost:8083/api/v1/swagger-ui.html`
 
 ### Run tests
 ```bash
-./mvnw test
+../mvnw.cmd -pl auth-service test
 ```
 
 ---

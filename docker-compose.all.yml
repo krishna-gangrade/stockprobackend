@@ -1,3 +1,5 @@
+name: stockpro
+
 services:
 
   # ── Eureka Service Discovery ──────────────────────────────────────────────────
@@ -449,7 +451,7 @@ services:
 
   stockpro-frontend:
     build:
-      context: ./stockpro-frontend
+      context: ../stockpro-frontend
       dockerfile: Dockerfile
     container_name: stockpro-frontend
     depends_on:
@@ -468,4 +470,5 @@ volumes:
 
 networks:
   default:
+    name: stockpro-network
     driver: bridge

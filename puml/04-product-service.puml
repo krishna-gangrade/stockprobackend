@@ -1,0 +1,55 @@
+@startuml
+title Product Service
+
+interface ProductService {
+  +getById()
+  +getBySku()
+  +getAllProducts()
+  +getActiveProducts()
+  +getByCategory()
+  +search()
+  +create()
+  +update()
+  +deactivate()
+  +activate()
+  +delete()
+}
+
+class ProductController {
+  +getById()
+  +getBySku()
+  +getAllProducts()
+  +create()
+  +update()
+}
+
+class ProductServiceImpl {
+  +getById()
+  +getBySku()
+  +getAllProducts()
+  +getActiveProducts()
+  +getByCategory()
+  +search()
+  +create()
+  +update()
+  +deactivate()
+  +activate()
+  +delete()
+}
+
+class ProductRepository {
+  +findBySku()
+  +findByActiveTrue()
+  +findByCategoryIgnoreCase()
+  +searchProducts()
+}
+
+class Product {
+  +builder()
+}
+
+ProductController --> ProductService
+ProductService <|.. ProductServiceImpl
+ProductServiceImpl --> ProductRepository
+ProductRepository --> Product
+@enduml

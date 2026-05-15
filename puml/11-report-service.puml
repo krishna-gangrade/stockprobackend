@@ -1,0 +1,86 @@
+@startuml
+title Report Service
+
+interface ReportService {
+  +takeSnapshot()
+  +getSnapshotByDate()
+  +getSnapshotByWarehouse()
+  +getTotalStockValue()
+  +getStockValueByWarehouse()
+  +getInventoryTurnover()
+  +getInventoryTurnoverByWarehouse()
+  +getTopMovingProducts()
+  +getSlowMovingProducts()
+  +getDeadStock()
+  +getPOSummary()
+  +getPOSummaryBySupplier()
+}
+
+class ReportController {
+  +takeSnapshot()
+  +getSnapshotByDate()
+  +getStockValueByWarehouse()
+  +getTopMovingProducts()
+  +getDeadStock()
+  +getPOSummary()
+}
+
+class ReportServiceImpl {
+  +takeSnapshot()
+  +getSnapshotByDate()
+  +getSnapshotByWarehouse()
+  +getTotalStockValue()
+  +getStockValueByWarehouse()
+  +getInventoryTurnover()
+  +getInventoryTurnoverByWarehouse()
+  +getTopMovingProducts()
+  +getSlowMovingProducts()
+  +getDeadStock()
+  +getPOSummary()
+  +getPOSummaryBySupplier()
+}
+
+class ReportRepository {
+  +findBySnapshotDate()
+  +findByWarehouseId()
+  +findByProductId()
+  +findBySnapshotDateBetween()
+  +findByWarehouseIdAndProductIdAndSnapshotDate()
+}
+
+class ProductClient {
+  +getById()
+  +getAllProducts()
+}
+
+class WarehouseClient {
+  +getAllWarehouses()
+  +getStockByWarehouse()
+}
+
+class MovementClient {
+  +getAllMovements()
+}
+
+class PurchaseClient {
+  +getByDateRange()
+}
+
+class SnapshotScheduler {
+  +runDailySnapshot()
+}
+
+class InventorySnapshot {
+  +builder()
+}
+
+ReportController --> ReportService
+ReportService <|.. ReportServiceImpl
+ReportServiceImpl --> ReportRepository
+ReportServiceImpl --> ProductClient
+ReportServiceImpl --> WarehouseClient
+ReportServiceImpl --> MovementClient
+ReportServiceImpl --> PurchaseClient
+SnapshotScheduler --> ReportServiceImpl
+ReportRepository --> InventorySnapshot
+@enduml

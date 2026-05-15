@@ -1,0 +1,86 @@
+@startuml
+title Warehouse Service
+
+interface WarehouseService {
+  +createWarehouse()
+  +getById()
+  +existsById()
+  +getAllWarehouses()
+  +getActiveWarehouses()
+  +updateWarehouse()
+  +deactivateWarehouse()
+  +assignManager()
+  +getStockLevel()
+  +getStockByWarehouse()
+  +getStockByProduct()
+  +updateStock()
+  +reserveStock()
+  +releaseReservation()
+  +transferStock()
+  +getLowStockItems()
+  +getOverstockItems()
+}
+
+class WarehouseController {
+  +createWarehouse()
+  +getById()
+  +getAllWarehouses()
+  +updateWarehouse()
+  +updateStock()
+  +transferStock()
+  +getLowStockItems()
+}
+
+class WarehouseServiceImpl {
+  +createWarehouse()
+  +getById()
+  +existsById()
+  +getAllWarehouses()
+  +getActiveWarehouses()
+  +updateWarehouse()
+  +deactivateWarehouse()
+  +assignManager()
+  +getStockLevel()
+  +getStockByWarehouse()
+  +getStockByProduct()
+  +updateStock()
+  +reserveStock()
+  +releaseReservation()
+  +transferStock()
+  +getLowStockItems()
+  +getOverstockItems()
+}
+
+class WarehouseRepository {
+  +existsByName()
+  +findByIsActive()
+}
+
+class StockLevelRepository {
+  +findByWarehouseIdAndProductId()
+  +findByWarehouseId()
+  +findByProductId()
+}
+
+class ProductClient {
+  +getById()
+  +getAllProducts()
+}
+
+class Warehouse {
+  +builder()
+}
+
+class StockLevel {
+  +getAvailableQuantity()
+}
+
+WarehouseController --> WarehouseService
+WarehouseService <|.. WarehouseServiceImpl
+WarehouseServiceImpl --> WarehouseRepository
+WarehouseServiceImpl --> StockLevelRepository
+WarehouseServiceImpl --> ProductClient
+WarehouseRepository --> Warehouse
+StockLevelRepository --> StockLevel
+Warehouse "1" --> "*" StockLevel
+@enduml

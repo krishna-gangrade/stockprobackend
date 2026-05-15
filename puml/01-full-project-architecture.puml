@@ -1,0 +1,77 @@
+@startuml
+title StockPro - Full Project Architecture
+top to bottom direction
+
+actor User
+rectangle "Angular Frontend" as Frontend
+rectangle "API Gateway" as Gateway
+
+package "Core Platform" {
+  rectangle "Eureka Server" as Eureka
+  rectangle "Admin Server" as Admin
+}
+
+package "Business Microservices" {
+  rectangle "Auth Service" as Auth
+  rectangle "Product Service" as Product
+  rectangle "Warehouse Service" as Warehouse
+  rectangle "Purchase Service" as Purchase
+  rectangle "Payment Service" as Payment
+  rectangle "Supplier Service" as Supplier
+  rectangle "Movement Service" as Movement
+  rectangle "Alert Service" as Alert
+  rectangle "Report Service" as Report
+}
+
+package "Infrastructure" {
+  database "MySQL" as MySQL
+  database "Redis" as Redis
+  queue "Kafka" as Kafka
+  cloud "Mail Server" as Mail
+  cloud "Razorpay" as Razorpay
+}
+
+User --> Frontend
+Frontend --> Gateway
+Gateway --> Auth
+Gateway --> Product
+Gateway --> Warehouse
+Gateway --> Purchase
+Gateway --> Payment
+Gateway --> Supplier
+Gateway --> Movement
+Gateway --> Alert
+Gateway --> Report
+Gateway --> Admin
+
+Auth ..> Eureka : registers
+Product ..> Eureka : registers
+Warehouse ..> Eureka : registers
+Purchase ..> Eureka : registers
+Payment ..> Eureka : registers
+Supplier ..> Eureka : registers
+Movement ..> Eureka : registers
+Alert ..> Eureka : registers
+Report ..> Eureka : registers
+Gateway ..> Eureka : discovery
+Admin ..> Eureka : monitoring
+
+Auth --> MySQL
+Product --> MySQL
+Warehouse --> MySQL
+Purchase --> MySQL
+Payment --> MySQL
+Supplier --> MySQL
+Movement --> MySQL
+Alert --> MySQL
+Report --> MySQL
+
+Auth --> Redis
+Auth --> Mail
+Alert --> Mail
+Supplier --> Mail
+Purchase --> Kafka
+Movement --> Kafka
+Payment --> Kafka
+Payment --> Razorpay
+@enduml

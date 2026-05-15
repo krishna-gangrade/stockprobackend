@@ -1,0 +1,31 @@
+@startuml
+title API Gateway
+left to right direction
+
+actor Client
+rectangle JwtFilter
+rectangle Routes
+rectangle Auth
+rectangle Product
+rectangle Warehouse
+rectangle Purchase
+rectangle Payment
+rectangle Supplier
+rectangle Movement
+rectangle Alert
+rectangle Report
+rectangle "Admin Server" as AdminGateway
+
+Client --> JwtFilter
+JwtFilter --> Routes
+Routes --> Auth
+Routes --> Product
+Routes --> Warehouse
+Routes --> Purchase
+Routes --> Payment
+Routes --> Supplier
+Routes --> Movement
+Routes --> Alert
+Routes --> Report
+Routes --> AdminGateway
+@enduml

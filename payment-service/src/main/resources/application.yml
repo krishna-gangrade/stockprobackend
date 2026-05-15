@@ -5,7 +5,6 @@ spring:
     import:
       - optional:file:.env[.properties]
       - optional:file:../.env[.properties]
-      - optional:file:../../.env[.properties]
   main:
     allow-bean-definition-overriding: true
   autoconfigure:

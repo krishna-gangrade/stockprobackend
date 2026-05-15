@@ -1,0 +1,68 @@
+@startuml
+title Supplier Service
+
+interface SupplierService {
+  +createSupplier()
+  +getById()
+  +getAllSuppliers()
+  +getActiveSuppliers()
+  +searchSuppliers()
+  +getByCity()
+  +getByCountry()
+  +getTopRatedSuppliers()
+  +updateSupplier()
+  +updateRating()
+  +deactivateSupplier()
+  +deleteSupplier()
+}
+
+interface SupplierNotificationService {
+  +sendSuspensionNotice()
+}
+
+class SupplierController {
+  +createSupplier()
+  +getById()
+  +getAllSuppliers()
+  +search()
+  +updateSupplier()
+  +updateRating()
+}
+
+class SupplierServiceImpl {
+  +createSupplier()
+  +getById()
+  +getAllSuppliers()
+  +getActiveSuppliers()
+  +searchSuppliers()
+  +getByCity()
+  +getByCountry()
+  +getTopRatedSuppliers()
+  +updateSupplier()
+  +updateRating()
+  +deactivateSupplier()
+  +deleteSupplier()
+}
+
+class SupplierNotificationServiceImpl {
+  +sendSuspensionNotice()
+}
+
+class SupplierRepository {
+  +findByIsActiveTrue()
+  +searchSuppliers()
+  +findByCityIgnoreCase()
+  +findByCountryIgnoreCase()
+  +findByIsActiveTrueOrderByRatingDesc()
+}
+
+class Supplier {
+  +builder()
+}
+
+SupplierController --> SupplierService
+SupplierService <|.. SupplierServiceImpl
+SupplierServiceImpl --> SupplierRepository
+SupplierNotificationService <|.. SupplierNotificationServiceImpl
+SupplierRepository --> Supplier
+@enduml

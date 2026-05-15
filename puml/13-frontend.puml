@@ -1,0 +1,33 @@
+@startuml
+title Frontend
+top to bottom direction
+
+rectangle "App Routes" as App
+rectangle "Login / Register / Forgot Password" as AuthPages
+rectangle "Admin / Manager / Officer / Staff Dashboards" as Dashboards
+rectangle Products
+rectangle Warehouses
+rectangle "Purchase Orders" as PurchasePage
+rectangle Payments
+rectangle Suppliers
+rectangle Movements
+rectangle Alerts
+rectangle Reports
+rectangle "API Docs" as Docs
+rectangle "Auth Guard / Role Guard" as Guards
+rectangle "AuthService / ApiServices / JWT Interceptor" as FrontServices
+
+App --> AuthPages
+App --> Dashboards
+App --> Products
+App --> Warehouses
+App --> PurchasePage
+App --> Payments
+App --> Suppliers
+App --> Movements
+App --> Alerts
+App --> Reports
+App --> Docs
+App --> Guards
+Guards --> FrontServices
+@enduml
