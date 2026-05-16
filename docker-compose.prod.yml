@@ -1,0 +1,491 @@
+name: stockpro
+
+services:
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    container_name: stockpro-eureka
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_HOSTNAME: eureka-server
+      JAVA_TOOL_OPTIONS: "-Xmx384m -Xms192m"
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Authorization: Basic ZXVyZWthOmV1cmVrYS1zZWNyZXQ=' http://localhost:8761/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  admin-server:
+    build:
+      context: .
+      dockerfile: admin-server/Dockerfile
+    container_name: stockpro-admin
+    restart: unless-stopped
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 9090
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin-secret}
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: stockpro-gateway
+    restart: unless-stopped
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8082
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JWT_SECRET: ${JWT_SECRET}
+      JAVA_TOOL_OPTIONS: "-Xmx384m -Xms192m"
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+
+  stockpro-db:
+    image: mysql:8.0
+    container_name: stockpro-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pass}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "3312:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_pass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-redis:
+    image: redis:7-alpine
+    container_name: stockpro-auth-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_pass}
+    ports:
+      - "6380:6379"
+    volumes:
+      - auth_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_pass}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: stockpro-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 2181 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: stockpro-kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: stockpro-auth-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      auth-redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${AUTH_DB_NAME:-stockpro_auth}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      REDIS_HOST: auth-redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_pass}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASS: ${MAIL_PASS}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS}
+      MAIL_DEV_LOG_OTP_ON_FAILURE: ${MAIL_DEV_LOG_OTP_ON_FAILURE:-false}
+      PASSWORD_RESET_OTP_LENGTH: ${PASSWORD_RESET_OTP_LENGTH:-6}
+      PASSWORD_RESET_OTP_EXPIRY_MINUTES: ${PASSWORD_RESET_OTP_EXPIRY_MINUTES:-10}
+      BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-true}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-StockPro Admin}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@stockpro.local}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  supplier-service:
+    build:
+      context: .
+      dockerfile: supplier-service/Dockerfile
+    container_name: stockpro-supplier-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8090
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${SUPPLIER_DB_NAME:-stockpro_supplier}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASS: ${MAIL_PASS}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8090/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  product-service:
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
+    container_name: stockpro-product-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${PRODUCT_DB_NAME:-stockpro_product}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  warehouse-service:
+    build:
+      context: .
+      dockerfile: warehouse-service/Dockerfile
+    container_name: stockpro-warehouse-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${WAREHOUSE_DB_NAME:-stockpro_warehouse}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  purchase-service:
+    build:
+      context: .
+      dockerfile: purchase-service/Dockerfile
+    container_name: stockpro-purchase-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${PURCHASE_DB_NAME:-stockpro_purchase}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8086:8086"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8086/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: stockpro-payment-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8089
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${PAYMENT_DB_NAME:-stockpro_payment}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PAYMENT_KAFKA_ENABLED: "true"
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_placeholder}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-rzp_test_secret_placeholder}
+      PAYMENT_MOCK_ENABLED: ${PAYMENT_MOCK_ENABLED:-true}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8089:8089"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8089/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  alert-service:
+    build:
+      context: .
+      dockerfile: alert-service/Dockerfile
+    container_name: stockpro-alert-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8087
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${ALERT_DB_NAME:-stockpro_alert}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASS: ${MAIL_PASS}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS}
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8087:8087"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8087/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  movement-service:
+    build:
+      context: .
+      dockerfile: movement-service/Dockerfile
+    container_name: stockpro-movement-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8088
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${MOVEMENT_DB_NAME:-stockpro_movement}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9092
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8088:8088"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8088/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  report-service:
+    build:
+      context: .
+      dockerfile: report-service/Dockerfile
+    container_name: stockpro-report-service
+    restart: unless-stopped
+    depends_on:
+      stockpro-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8091
+      DB_HOST: stockpro-db
+      DB_PORT: 3306
+      DB_NAME: ${REPORT_DB_NAME:-stockpro_report}
+      DB_USER: ${DB_USER:-stockpro}
+      DB_PASSWORD: ${DB_PASSWORD:-stockpro_pass}
+      EUREKA_HOST: eureka-server
+      EUREKA_PORT: 8761
+      EUREKA_USER: ${EUREKA_USER:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8091/api/v1/actuator/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+volumes:
+  db_data:
+  auth_redis_data:
+
+networks:
+  default:
+    name: stockpro-network
+    driver: bridge
