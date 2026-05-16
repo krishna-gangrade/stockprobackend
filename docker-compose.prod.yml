@@ -188,6 +188,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: auth-service
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
     ports:
       - "8083:8083"
@@ -220,6 +221,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: supplier-service
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT}
       MAIL_USER: ${MAIL_USER}
@@ -258,6 +260,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: product-service
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
     ports:
       - "8085:8085"
@@ -292,6 +295,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: warehouse-service
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
     ports:
       - "8084:8084"
@@ -326,6 +330,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: purchase-service
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
     ports:
       - "8086:8086"
@@ -362,6 +367,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: payment-service
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_placeholder}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-rzp_test_secret_placeholder}
       PAYMENT_MOCK_ENABLED: ${PAYMENT_MOCK_ENABLED:-true}
@@ -403,6 +409,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: alert-service
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
     ports:
       - "8087:8087"
@@ -439,6 +446,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: movement-service
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
     ports:
       - "8088:8088"
@@ -471,6 +479,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: report-service
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -Dnetworkaddress.cache.ttl=30 -Dnetworkaddress.cache.negative.ttl=0"
     ports:
       - "8091:8091"
