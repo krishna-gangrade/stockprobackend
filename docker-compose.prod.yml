@@ -39,6 +39,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: admin-server
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
     ports:
       - "9090:9090"
@@ -64,6 +65,7 @@ services:
       EUREKA_PORT: 8761
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
+      EUREKA_INSTANCE_HOSTNAME: api-gateway
       JWT_SECRET: ${JWT_SECRET}
       JAVA_TOOL_OPTIONS: "-Xmx384m -Xms192m"
     ports:

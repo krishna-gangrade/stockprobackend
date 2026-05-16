@@ -7,6 +7,14 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   ci:
@@ -25,13 +33,22 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     env:
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
       DB_NAME: stockpro_auth
-      DB_USER: root
-      DB_PASSWORD: 2003
+      DB_USER: stockpro
+      DB_PASSWORD: stockpro_pass
       JWT_SECRET: stockpro-ci-secret-key-must-be-at-least-256-bits-long
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
@@ -56,9 +73,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mysql-client
 
-      - name: Create CI database
+      - name: Initialize CI databases
         run: |
-          mysql -h 127.0.0.1 -uroot -p2003 -e "CREATE DATABASE IF NOT EXISTS stockpro_auth;"
+          mysql -h 127.0.0.1 -uroot -p2003 < init-db.sql
 
       - name: Run tests
         run: ./mvnw -B clean verify
@@ -83,10 +100,48 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
           script: |
-            set -e
+            set -Eeuo pipefail
             export GH_PAT="${{ secrets.GH_PAT }}"
             export REPO_URL="https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git"
             export APP_DIR="/opt/stockpro/backend"
+            export COMPOSE_FILE="docker-compose.prod.yml"
+
+            require_command() {
+              command -v "$1" >/dev/null 2>&1 || {
+                echo "Required command '$1' is not installed on the EC2 host."
+                exit 1
+              }
+            }
+
+            wait_for_http() {
+              local url="$1"
+              local timeout_seconds="${2:-300}"
+              local start_time
+              start_time="$(date +%s)"
+
+              until curl -fsS "$url" >/dev/null 2>&1; do
+                if [ "$(( $(date +%s) - start_time ))" -ge "$timeout_seconds" ]; then
+                  echo "Timed out waiting for $url"
+                  return 1
+                fi
+                sleep 5
+              done
+            }
+
+            dump_debug_state() {
+              cd "${APP_DIR}" || return 0
+              docker compose -f "${COMPOSE_FILE}" ps || true
+              for container in stockpro-eureka stockpro-gateway stockpro-auth-service; do
+                echo "----- ${container} logs -----"
+                docker logs --tail 200 "${container}" || true
+              done
+            }
+
+            trap dump_debug_state ERR
+
+            require_command git
+            require_command docker
+            require_command curl
 
             mkdir -p "${APP_DIR}"
 
@@ -100,8 +155,14 @@ jobs:
             git reset --hard origin/main
             git clean -fd -e .env
 
-            docker compose -f docker-compose.prod.yml pull || true
-            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            if [ ! -f .env ]; then
+              echo "Missing ${APP_DIR}/.env. Create it on EC2 before running deployment."
+              exit 1
+            fi
+
+            docker compose -f "${COMPOSE_FILE}" config >/dev/null
+            docker compose -f "${COMPOSE_FILE}" build --pull
+            docker compose -f "${COMPOSE_FILE}" up -d --remove-orphans
 
             for url in \
               "http://localhost:8761/actuator/health" \
@@ -109,5 +170,7 @@ jobs:
               "http://localhost:8082/actuator/health" \
               "http://localhost:8083/api/v1/actuator/health"
             do
-              timeout 180 sh -c "until wget -qO- \"$url\" >/dev/null; do sleep 5; done"
+              wait_for_http "$url" 300
             done
+
+            docker compose -f "${COMPOSE_FILE}" ps
