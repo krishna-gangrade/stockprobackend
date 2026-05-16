@@ -81,7 +81,7 @@ jobs:
         run: ./mvnw -B clean verify
 
       - name: Run SonarQube analysis
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SONAR_HOST_URL != '' && secrets.SONAR_TOKEN != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != ''
         run: ./mvnw -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.token="${SONAR_TOKEN}"
 
   deploy:
