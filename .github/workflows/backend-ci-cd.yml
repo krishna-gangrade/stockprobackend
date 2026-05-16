@@ -139,12 +139,7 @@ jobs:
             docker compose -f "${COMPOSE_FILE}" build --pull
             docker compose -f "${COMPOSE_FILE}" up -d --remove-orphans
 
-            for url in \
-              "http://localhost:8761/actuator/health" \
-              "http://localhost:9090/actuator/health" \
-              "http://localhost:8082/actuator/health" \
-              "http://localhost:8083/api/v1/actuator/health"
-            do
+            for url in "http://localhost:8761/actuator/health" "http://localhost:9090/actuator/health" "http://localhost:8082/actuator/health" "http://localhost:8083/api/v1/actuator/health"; do
               success=0
               for attempt in $(seq 1 60); do
                 if curl -fsS "$url" >/dev/null 2>&1; then
