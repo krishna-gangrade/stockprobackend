@@ -40,23 +40,27 @@ public class SwaggerLinksController {
 
     private List<Map<String, String>> serviceLinks() {
         return List.of(
-                link("Auth Service", "/docs/auth/swagger-ui.html", "/docs/auth/v3/api-docs"),
-                link("Product Service", "/docs/products/swagger-ui.html", "/docs/products/v3/api-docs"),
-                link("Warehouse Service", "/docs/warehouses/swagger-ui.html", "/docs/warehouses/v3/api-docs"),
-                link("Purchase Service", "/docs/purchases/swagger-ui.html", "/docs/purchases/v3/api-docs"),
-                link("Payment Service", "/docs/payments/swagger-ui.html", "/docs/payments/v3/api-docs"),
-                link("Supplier Service", "/docs/suppliers/swagger-ui.html", "/docs/suppliers/v3/api-docs"),
-                link("Movement Service", "/docs/movements/swagger-ui.html", "/docs/movements/v3/api-docs"),
-                link("Alert Service", "/docs/alerts/swagger-ui.html", "/docs/alerts/v3/api-docs"),
-                link("Report Service", "/docs/reports/swagger-ui.html", "/docs/reports/v3/api-docs")
+                link("Auth Service", "auth"),
+                link("Product Service", "products"),
+                link("Warehouse Service", "warehouses"),
+                link("Purchase Service", "purchases"),
+                link("Payment Service", "payments"),
+                link("Supplier Service", "suppliers"),
+                link("Movement Service", "movements"),
+                link("Alert Service", "alerts"),
+                link("Report Service", "reports")
         );
     }
 
-    private Map<String, String> link(String name, String swaggerPath, String apiDocsPath) {
+    private Map<String, String> link(String name, String slug) {
         return Map.of(
                 "name", name,
-                "swaggerUi", gatewayBaseUrl + swaggerPath,
-                "apiDocs", gatewayBaseUrl + apiDocsPath
+                "swaggerUi", gatewayBaseUrl + "/swagger-ui.html?urls.primaryName=" + encode(name),
+                "apiDocs", gatewayBaseUrl + "/docs/" + slug + "/v3/api-docs"
         );
+    }
+
+    private String encode(String value) {
+        return value.replace(" ", "%20");
     }
 }
