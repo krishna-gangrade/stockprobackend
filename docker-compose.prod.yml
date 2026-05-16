@@ -66,6 +66,8 @@ services:
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka-secret}
       EUREKA_INSTANCE_HOSTNAME: api-gateway
+      GATEWAY_PUBLIC_BASE_URL: ${GATEWAY_PUBLIC_BASE_URL:-https://stockpro.linkpc.net}
+      GATEWAY_ALLOWED_ORIGINS: ${GATEWAY_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:80,https://stockpro.linkpc.net,http://stockpro.linkpc.net}
       JWT_SECRET: ${JWT_SECRET}
       JAVA_TOOL_OPTIONS: "-Xmx384m -Xms192m"
     ports:

@@ -46,11 +46,11 @@ public class AuthController {
 
     @PostMapping("/google-login")
     @Operation(summary = "Log in with a Google identity token")
-    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@RequestBody String token) {
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@RequestBody GoogleLoginRequest request) {
         return ResponseEntity.ok(ApiResponse.<AuthResponse>builder()
                 .success(true)
                 .message("Google login successful")
-                .data(authService.loginWithGoogle(token))
+                .data(authService.loginWithGoogle(request.token()))
                 .build());
     }
 
@@ -193,4 +193,6 @@ public class AuthController {
         }
         return authorizationHeader.substring(7);
     }
+
+    public record GoogleLoginRequest(String token) {}
 }
