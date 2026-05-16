@@ -85,7 +85,13 @@ jobs:
 
       - name: Run SonarQube analysis
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != ''
-        run: ./mvnw -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.token="${SONAR_TOKEN}"
+        continue-on-error: true
+        run: |
+          if ! curl -fsS --max-time 15 "${SONAR_HOST_URL}/api/system/status" >/dev/null; then
+            echo "SonarQube is unreachable from GitHub Actions. Skipping analysis."
+            exit 0
+          fi
+          ./mvnw -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.token="${SONAR_TOKEN}"
 
   deploy:
     name: Backend Deploy
