@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "warehouse-service", url = "${app.services.warehouse-service.url:http://localhost:8084}", path = "/api/v1/warehouses")
+@FeignClient(name = "warehouse-service", path = "/api/v1/warehouses")
 public interface WarehouseClient {
 
     @GetMapping("/{id}")
