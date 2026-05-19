@@ -187,20 +187,15 @@ jobs:
                       print
                     }
                   ' "$conf" > "$tmp_conf"
-                  cat >> "$tmp_conf" <<EOF
-
-$DOMAIN {
-    encode gzip
-
-    handle /api/* {
-        reverse_proxy 127.0.0.1:8082
-    }
-
-    handle {
-        reverse_proxy 127.0.0.1:4200
-    }
-}
-EOF
+                  printf '\n%s {\n' "$DOMAIN" >> "$tmp_conf"
+                  printf '    encode gzip\n\n' >> "$tmp_conf"
+                  printf '    handle /api/* {\n' >> "$tmp_conf"
+                  printf '        reverse_proxy 127.0.0.1:8082\n' >> "$tmp_conf"
+                  printf '    }\n\n' >> "$tmp_conf"
+                  printf '    handle {\n' >> "$tmp_conf"
+                  printf '        reverse_proxy 127.0.0.1:4200\n' >> "$tmp_conf"
+                  printf '    }\n' >> "$tmp_conf"
+                  printf '}\n' >> "$tmp_conf"
                   sudo cp "$tmp_conf" "$conf"
                   rm -f "$tmp_conf"
                   CADDY_UPDATED=1
