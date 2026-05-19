@@ -159,9 +159,9 @@ jobs:
             done
 
             if command -v caddy >/dev/null 2>&1; then
-              echo "Installing scoped Caddy site config for stockpro.linkpc.net"
+              echo "Repairing existing Caddy config for stockpro.linkpc.net"
               sudo cp /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.bak.$(date +%s)" || true
-              sudo mkdir -p /etc/caddy/sites
+              tmp_caddy="$(mktemp)"
               printf '%s\n' \
                 'stockpro.linkpc.net {' \
                 '    encode gzip' \
@@ -173,11 +173,12 @@ jobs:
                 '    handle {' \
                 '        reverse_proxy 127.0.0.1:4200' \
                 '    }' \
-                '}' | sudo tee /etc/caddy/sites/stockpro.linkpc.net.conf >/dev/null
+                '}' > "$tmp_caddy"
 
-              if ! sudo grep -Eq '^[[:space:]]*import[[:space:]]+/etc/caddy/sites/\*[[:space:]]*$' /etc/caddy/Caddyfile; then
-                printf '\nimport /etc/caddy/sites/*\n' | sudo tee -a /etc/caddy/Caddyfile >/dev/null
-              fi
+              sudo cp "$tmp_caddy" /etc/caddy/Caddyfile
+              rm -f "$tmp_caddy"
+              sudo rm -f /etc/caddy/sites/stockpro.linkpc.net.conf 2>/dev/null || true
+              sudo sed -i '/^[[:space:]]*import[[:space:]]\+\/etc\/caddy\/sites\/\*[[:space:]]*$/d' /etc/caddy/Caddyfile
 
               echo "Reloading Caddy with frontend on 4200 and API gateway on 8082"
               if ! sudo caddy validate --config /etc/caddy/Caddyfile; then
