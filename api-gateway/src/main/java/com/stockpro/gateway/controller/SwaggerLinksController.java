@@ -56,7 +56,7 @@ public class SwaggerLinksController {
         String apiDocsUrl = gatewayBaseUrl + "/docs/" + slug + "/v3/api-docs";
         return Map.of(
                 "name", name,
-                "swaggerUi", gatewayBaseUrl + "/swagger-ui.html?url=" + encode(apiDocsUrl),
+                "swaggerUi", gatewayBaseUrl + "/webjars/swagger-ui/index.html?url=" + encode(apiDocsUrl),
                 "apiDocs", apiDocsUrl
         );
     }
