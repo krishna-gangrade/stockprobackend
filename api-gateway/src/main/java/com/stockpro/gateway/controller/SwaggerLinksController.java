@@ -53,10 +53,11 @@ public class SwaggerLinksController {
     }
 
     private Map<String, String> link(String name, String slug) {
+        String apiDocsUrl = gatewayBaseUrl + "/docs/" + slug + "/v3/api-docs";
         return Map.of(
                 "name", name,
-                "swaggerUi", gatewayBaseUrl + "/swagger-ui.html?urls.primaryName=" + encode(name),
-                "apiDocs", gatewayBaseUrl + "/docs/" + slug + "/v3/api-docs"
+                "swaggerUi", gatewayBaseUrl + "/swagger-ui.html?url=" + encode(apiDocsUrl),
+                "apiDocs", apiDocsUrl
         );
     }
 
