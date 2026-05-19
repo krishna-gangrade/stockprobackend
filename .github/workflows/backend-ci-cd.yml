@@ -182,6 +182,14 @@ jobs:
                 '        reverse_proxy 127.0.0.1:8082' \
                 '    }' \
                 '' \
+                '    handle /webjars/* {' \
+                '        reverse_proxy 127.0.0.1:8082' \
+                '    }' \
+                '' \
+                '    handle /swagger-resources/* {' \
+                '        reverse_proxy 127.0.0.1:8082' \
+                '    }' \
+                '' \
                 '    handle /v3/api-docs* {' \
                 '        reverse_proxy 127.0.0.1:8082' \
                 '    }' \
