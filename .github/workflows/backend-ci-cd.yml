@@ -159,23 +159,24 @@ jobs:
             done
 
             if command -v caddy >/dev/null 2>&1; then
-              echo "Checking host Caddy config for stockpro.linkpc.net"
-              DOMAIN="stockpro.linkpc.net"
-              CADDY_UPDATED=0
-              for conf in /etc/caddy/Caddyfile /etc/caddy/*.conf /etc/caddy/sites/*; do
-                [ -f "$conf" ] || continue
-                if grep -q "$DOMAIN" "$conf"; then
-                  echo "Normalizing Caddy upstreams in $conf"
-                  sudo cp "$conf" "$conf.bak"
-                  sudo sed -i -E 's#reverse_proxy[[:space:]]+(127\\.0\\.0\\.1|localhost):8082#reverse_proxy 127.0.0.1:8082#g' "$conf"
-                  sudo sed -i -E 's#reverse_proxy[[:space:]]+(127\\.0\\.0\\.1|localhost):4200#reverse_proxy 127.0.0.1:4200#g' "$conf"
-                  CADDY_UPDATED=1
-                fi
-              done
+              echo "Installing scoped Caddy site config for stockpro.linkpc.net"
+              sudo cp /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.bak.$(date +%s)" || true
+              sudo mkdir -p /etc/caddy/sites
+              printf '%s\n' \
+                'stockpro.linkpc.net {' \
+                '    encode gzip' \
+                '' \
+                '    handle /api/* {' \
+                '        reverse_proxy 127.0.0.1:8082' \
+                '    }' \
+                '' \
+                '    handle {' \
+                '        reverse_proxy 127.0.0.1:4200' \
+                '    }' \
+                '}' | sudo tee /etc/caddy/sites/stockpro.linkpc.net.conf >/dev/null
 
-              if [ "$CADDY_UPDATED" -ne 1 ]; then
-                echo "No stockpro.linkpc.net Caddy config found. Appending site block to /etc/caddy/Caddyfile"
-                sudo sh -c "printf '\n%s {\n    encode gzip\n\n    handle /api/* {\n        reverse_proxy 127.0.0.1:8082\n    }\n\n    handle {\n        reverse_proxy 127.0.0.1:4200\n    }\n}\n' '$DOMAIN' >> /etc/caddy/Caddyfile"
+              if ! sudo grep -Eq '^[[:space:]]*import[[:space:]]+/etc/caddy/sites/\*[[:space:]]*$' /etc/caddy/Caddyfile; then
+                printf '\nimport /etc/caddy/sites/*\n' | sudo tee -a /etc/caddy/Caddyfile >/dev/null
               fi
 
               echo "Reloading Caddy with frontend on 4200 and API gateway on 8082"
