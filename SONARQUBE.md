@@ -57,7 +57,7 @@ This publishes the backend project as:
 From the repo root:
 
 ```powershell
-Set-Location stockpro-frontend
+Set-Location stockprofrontend
 npm install
 npm run build
 npm run test:coverage
@@ -65,7 +65,7 @@ npm run test:coverage
 
 ## 5. Run frontend scan
 
-From `stockpro-frontend`:
+From `stockprofrontend`:
 
 ```powershell
 docker run --rm `
@@ -123,7 +123,7 @@ $env:SONAR_TOKEN="<your-sonar-token>"
 Then for frontend:
 
 ```powershell
-Set-Location stockpro-frontend
+Set-Location stockprofrontend
 npm install
 npm run build
 npm run test:coverage

@@ -61,4 +61,4 @@ From this folder:
 ## Notes
 
 - Dockerfiles still build correctly because the backend services, parent `pom.xml`, wrapper files, and compose files were moved together into the same backend build context.
-- The frontend remains a sibling app at `../stockpro-frontend`, and the full-stack compose file points there explicitly.
+- The frontend remains a sibling app at `../stockprofrontend`, and the full-stack compose file points there explicitly.

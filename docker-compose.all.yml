@@ -451,7 +451,7 @@ services:
 
   stockpro-frontend:
     build:
-      context: ../stockpro-frontend
+      context: ../stockprofrontend
       dockerfile: Dockerfile
     container_name: stockpro-frontend
     depends_on:
