@@ -158,4 +158,52 @@ jobs:
               fi
             done
 
+            if command -v caddy >/dev/null 2>&1; then
+              echo "Checking host Caddy config for stockpro.linkpc.net"
+              DOMAIN="stockpro.linkpc.net"
+              CADDY_UPDATED=0
+              for conf in /etc/caddy/Caddyfile /etc/caddy/*.conf /etc/caddy/sites/*; do
+                [ -f "$conf" ] || continue
+                if grep -q "$DOMAIN" "$conf"; then
+                  echo "Updating Caddy upstreams in $conf"
+                  sudo sed -i -E 's#reverse_proxy[[:space:]]+localhost:8082#reverse_proxy 127.0.0.1:8082#g' "$conf"
+                  sudo sed -i -E 's#reverse_proxy[[:space:]]+127\.0\.0\.1:8082#reverse_proxy 127.0.0.1:8082#g' "$conf"
+                  sudo sed -i -E 's#reverse_proxy[[:space:]]+localhost:4200#reverse_proxy 127.0.0.1:4200#g' "$conf"
+                  sudo sed -i -E 's#reverse_proxy[[:space:]]+127\.0\.0\.1:4200#reverse_proxy 127.0.0.1:4200#g' "$conf"
+                  CADDY_UPDATED=1
+                fi
+              done
+
+              if [ "$CADDY_UPDATED" -eq 1 ]; then
+                echo "Reloading Caddy with frontend on 4200 and API gateway on 8082"
+                sudo caddy validate --config /etc/caddy/Caddyfile
+                if sudo systemctl reload caddy >/dev/null 2>&1; then
+                  :
+                elif sudo service caddy reload >/dev/null 2>&1; then
+                  :
+                else
+                  echo "Unable to reload Caddy automatically after updating config."
+                  exit 1
+                fi
+              else
+                echo "No stockpro.linkpc.net Caddy config found to update automatically."
+              fi
+            fi
+
+            public_checks=0
+            for attempt in $(seq 1 24); do
+              if curl -kfsS https://stockpro.linkpc.net/api/v1/auth/login >/dev/null 2>&1 || curl -kIs https://stockpro.linkpc.net/api/v1/auth/login >/dev/null 2>&1; then
+                public_checks=1
+                break
+              fi
+              sleep 5
+            done
+            if [ "$public_checks" -ne 1 ]; then
+              echo "Public API route check failed for https://stockpro.linkpc.net/api/v1/auth/login"
+              docker compose -f "${COMPOSE_FILE}" ps || true
+              docker logs --tail 200 stockpro-gateway || true
+              docker logs --tail 200 stockpro-auth-service || true
+              exit 1
+            fi
+
             docker compose -f "${COMPOSE_FILE}" ps
