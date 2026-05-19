@@ -1,9 +1,12 @@
 package com.stockpro.gateway.controller;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -38,6 +41,17 @@ public class SwaggerLinksController {
         return swaggerLinks();
     }
 
+    @GetMapping("/{slug}/swagger-config")
+    public Map<String, Object> swaggerConfig(@PathVariable String slug) {
+        if (serviceLinks().stream().noneMatch(link -> slug.equals(link.get("slug")))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown docs service: " + slug);
+        }
+
+        return Map.of(
+                "url", gatewayBaseUrl + "/docs/" + slug + "/v3/api-docs"
+        );
+    }
+
     private List<Map<String, String>> serviceLinks() {
         return List.of(
                 link("Auth Service", "auth"),
@@ -54,9 +68,11 @@ public class SwaggerLinksController {
 
     private Map<String, String> link(String name, String slug) {
         String apiDocsUrl = gatewayBaseUrl + "/docs/" + slug + "/v3/api-docs";
+        String swaggerConfigUrl = gatewayBaseUrl + "/docs/" + slug + "/swagger-config";
         return Map.of(
                 "name", name,
-                "swaggerUi", gatewayBaseUrl + "/webjars/swagger-ui/index.html?url=" + encode(apiDocsUrl),
+                "slug", slug,
+                "swaggerUi", gatewayBaseUrl + "/webjars/swagger-ui/index.html?configUrl=" + encode(swaggerConfigUrl),
                 "apiDocs", apiDocsUrl
         );
     }
