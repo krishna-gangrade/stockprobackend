@@ -170,6 +170,26 @@ jobs:
                 '        reverse_proxy 127.0.0.1:8082' \
                 '    }' \
                 '' \
+                '    handle /docs/* {' \
+                '        reverse_proxy 127.0.0.1:8082' \
+                '    }' \
+                '' \
+                '    handle /swagger-ui/* {' \
+                '        reverse_proxy 127.0.0.1:8082' \
+                '    }' \
+                '' \
+                '    handle /swagger-ui.html {' \
+                '        reverse_proxy 127.0.0.1:8082' \
+                '    }' \
+                '' \
+                '    handle /v3/api-docs* {' \
+                '        reverse_proxy 127.0.0.1:8082' \
+                '    }' \
+                '' \
+                '    handle /admin/* {' \
+                '        reverse_proxy 127.0.0.1:8082' \
+                '    }' \
+                '' \
                 '    handle {' \
                 '        reverse_proxy 127.0.0.1:4200' \
                 '    }' \
