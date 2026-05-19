@@ -165,11 +165,44 @@ jobs:
               for conf in /etc/caddy/Caddyfile /etc/caddy/*.conf /etc/caddy/sites/*; do
                 [ -f "$conf" ] || continue
                 if grep -q "$DOMAIN" "$conf"; then
-                  echo "Updating Caddy upstreams in $conf"
-                  sudo sed -i -E 's#reverse_proxy[[:space:]]+localhost:8082#reverse_proxy 127.0.0.1:8082#g' "$conf"
-                  sudo sed -i -E 's#reverse_proxy[[:space:]]+127\.0\.0\.1:8082#reverse_proxy 127.0.0.1:8082#g' "$conf"
-                  sudo sed -i -E 's#reverse_proxy[[:space:]]+localhost:4200#reverse_proxy 127.0.0.1:4200#g' "$conf"
-                  sudo sed -i -E 's#reverse_proxy[[:space:]]+127\.0\.0\.1:4200#reverse_proxy 127.0.0.1:4200#g' "$conf"
+                  echo "Rewriting Caddy site block in $conf"
+                  tmp_conf="$(mktemp)"
+                  awk -v domain="$DOMAIN" '
+                    BEGIN { skip = 0; depth = 0 }
+                    {
+                      if (!skip && $0 ~ "^[[:space:]]*" domain "[[:space:]]*\\{[[:space:]]*$") {
+                        skip = 1
+                        depth = 1
+                        next
+                      }
+                      if (skip) {
+                        opens = gsub(/\{/, "{")
+                        closes = gsub(/\}/, "}")
+                        depth += opens - closes
+                        if (depth <= 0) {
+                          skip = 0
+                        }
+                        next
+                      }
+                      print
+                    }
+                  ' "$conf" > "$tmp_conf"
+                  cat >> "$tmp_conf" <<EOF
+
+$DOMAIN {
+    encode gzip
+
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8082
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:4200
+    }
+}
+EOF
+                  sudo cp "$tmp_conf" "$conf"
+                  rm -f "$tmp_conf"
                   CADDY_UPDATED=1
                 fi
               done
